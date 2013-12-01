@@ -67,106 +67,39 @@
 
 
     <script>
+      // CONFIGURABLE VARS
+      var lpSensitivity = 10.0
+      var glowSensitivity = 1.0
+      var hpSensitivity = 10.0
+      var lpAmp = 0.1;
+      var hpAmp = 0.1;
+      var lpNoiseFloor = 25;
+      var hpNoiseFloor = 3;
+      var attackAvg = 2.0;
+      var kickAvg = 3.0;
+      var lpDecay = 0.97;
+      var hpDecay = 0.95;
+      var gridSpeed = 0.0005;
+      var blurDistance = 3;
+      var distortion = 1.0;
+
+
+      //STATUS VARS
       var targetRotation = 0;
       var targetRotationOnMouseDown = 0;
 
       var mouseX = 0;
       var mouseXOnMouseDown = 0;
 
-      var windowHalfX = window.innerWidth / 2;
-      var lastTime = window.innerHeight / 2;
       var timeNow = new Date().getTime();
+      var lastTime  = timeNow;
       var wWobble = 0;
+      var shaderTime = 0;
+      var beat = 0;
+ 
+      var soundOn = false;
+      var smSound = null;
     </script>
-
-
-
-    <script type="text/javascript">
-    // Globals
-    var lpSensitivity = 10.0
-    var glowSensitivity = 1.0
-    var hpSensitivity = 10.0
-    var lpAmp = 0.1;
-    var hpAmp = 0.1;
-    var lpNoiseFloor = 25;
-    var hpNoiseFloor = 3;
-    var attackAvg = 2.0;
-    var kickAvg = 3.0;
-    var lpDecay = 0.97;
-    var hpDecay = 0.95;
-    var gridSpeed = 0.0005;
-    var beat = 0;
-    var blur = 3;
-    var lo, hi;
-    var soundOn = false;
-    var smSound = null;
-    var transientThreshold = 30;
-    var transientFloor = 0;
-    var shaderTime = 0;
-    var distortion = 1.0;
-    </script>
-
-    <script type="text/javascript">
-    soundManager.setup({
-      // path to directory containing SM2 SWF
-      url: 'lib/sm2/swf',
-      preferFlash : true,
-      usePeakData : true,
-      flashVersion : 9
-    });
-    soundManager.flash9Options = {
-      usePeakData : true,
-      useEQData : false,
-    }
-      
-    function initAudio(){
-      smSound = soundManager.createSound({
-        id : 'song1',
-        url : 'music/drumloop.mp3',
-        autoLoad : true,
-        autoPlay : false,
-        usePeakData : true,
-        useEQData : false,
-      })
-      soundOn = true;      
-    };
-
-    soundManager.onready(initAudio);
-
-
-    function processAudio(){
-      if (!soundOn || !smSound) return;
-        //smSound.peakData['right'];
-
-        //FFTData = new Float32Array(analyser.frequencyBinCount);
-        //analyser.getFloatFrequencyData(FFTData);
-        //console.log(FFTData[0]);
-        // lo = smSound.eqData[3] * 100;
-        // hi = (smSound.eqData[100] + smSound.eqData[150] + smSound.eqData[200]) * 300;
-        hi = smSound.peakData.left * 100;
-        lo = smSound.peakData.right * 100;
-
-        if (lpAmp >= lo) {
-          lpAmp = Math.max(lpNoiseFloor, lpAmp * lpDecay);
-        } else {
-          lpAmp = (lpAmp * kickAvg + (lo || 0)) / (kickAvg + 1.0);
-        }
-        
-        if (hpAmp >= smSound.peakData['left'] * 100.0) {
-          hpAmp = Math.max(hpNoiseFloor, hpAmp * hpDecay);
-        } else {
-          hpAmp = (hpAmp * attackAvg + hi) / (attackAvg + 1.0);          
-        }
-
-        //console.log(lpAmp);
-    }
-
-    //soundManager.whileplaying = processAudio;
-    </script>
-
-
-
-
 
 
     <script>      
@@ -217,11 +150,10 @@
       renderer.setClearColor( 0x000000, 1 );
       renderer.setSize( height, width );
       renderer.autoClear = true;
-      document.body.appendChild( renderer.domElement );
-
+      
       scene = new THREE.Scene();
       camera = new THREE.PerspectiveCamera( 75, width / height, 0.1, 1000 );
-
+      camera.position.set( 0, 00, 200 );
 
       renderTargetGlow = new THREE.WebGLRenderTarget( width, height,  { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat });
 
@@ -264,8 +196,6 @@
     </script>
 
     <script>
-      camera.position.set( 0, 00, 200 );
-
       var textureMaterial = new THREE.ShaderMaterial({
         uniforms : THREE.UniformsUtils.clone(THREE.TextureShader.uniforms),
         vertexShader : THREE.TextureShader.vertexShader,
@@ -310,35 +240,30 @@
       spotLight.shadowMapHeight = 1024;
       scene.add( spotLight );
 
-      parent = new THREE.Object3D();
-      parent.position.y = 0;
-      scene.add(parent);
+      logoObj = new THREE.Object3D();
+      logoObj.position.y = 0;
+      scene.add(logoObj);
       logo = createLogo();
-      parent.add(logo);
+      logoObj.add(logo);
 
     </script>
 
     <script>
+        renderPass = new THREE.RenderPass( scene, camera );
 
         badTVPass = new THREE.ShaderPass( THREE.BadTVShader );
-        //badTVPass.uniforms[ "mute" ].value = true;
         badTVPass.uniforms[ "distortion" ].value = 0.0;
         badTVPass.uniforms[ "distortion2" ].value = 3.0;
         badTVPass.uniforms[ "speed" ].value = 0.03;
         badTVPass.uniforms[ "rollSpeed" ].value = 0.0;
         badTVPass.renderToScreen = false;
-        //badTVPass.renderToScreen;
-
-        // rgbPass = new THREE.ShaderPass( THREE.RGBShiftShader );
+        
         filmPass = new THREE.ShaderPass( THREE.FilmShader );
         filmPass.uniforms['grayscale'].value = false;
         filmPass.uniforms['sCount'].value = 800;
         filmPass.uniforms['sIntensity'].value = 0.5;
         filmPass.uniforms['nIntensity'].value = 0.5;
-        //filmPass.renderToScreen = true;
-
-        //dotPass = new THREE.ShaderPass( THREE.DotScreenShader );
-        //dotPass.renderToScreen = true;
+        
         staticPass = new THREE.ShaderPass( THREE.StaticShader );
         staticPass.uniforms["amount"].value = 0.1;
         staticPass.uniforms["size"].value = 2;
@@ -347,33 +272,29 @@
         vignettePass.uniforms["darkness"].value = 1.1
         vignettePass.uniforms["offset"].value = 1.0;
 
+        //rgbPass = new THREE.ShaderPass( THREE.RGBShiftShader );
+        //dotPass = new THREE.ShaderPass( THREE.DotScreenShader );
 
         copyPass = new THREE.ShaderPass( THREE.CopyShader );
-        copyPass.renderToScreen = true;
-        
+        copyPass.renderToScreen = true; 
 
         effectcomposer = new THREE.EffectComposer( renderer );
-        
-        renderPass = new THREE.RenderPass( scene, camera );
-        
-
         effectcomposer.addPass( renderPass );
         effectcomposer.addPass( filmPass );
         effectcomposer.addPass( badTVPass );
         effectcomposer.addPass( vignettePass );
         effectcomposer.addPass( staticPass );
         effectcomposer.addPass( copyPass );
-        
     </script>
     
     <script>
       function animateLogo(timeNow) {        
         if (Math.abs(targetRotation) > 0.01) targetRotation = targetRotation * 0.95;
         else if (Math.abs(targetRotation) > 0) targetRotation = 0;
-        parent.rotation.y += ( targetRotation - 0.1 ) * 0.05;
-        parent.rotation.x = 0.3 * vWobble;
-        parent.rotation.z = 0.1 * vWobble;
-        parent.position.z = 0 + (lpSensitivity * lpAmp / 10);
+        logoObj.rotation.y += ( targetRotation - 0.1 ) * 0.05;
+        logoObj.rotation.x = 0.3 * vWobble;
+        logoObj.rotation.z = 0.1 * vWobble;
+        logoObj.position.z = 0 + (lpSensitivity * lpAmp / 10);
       }
 
       function animatePlane(timeNow) {
@@ -386,12 +307,12 @@
         plane2.position.y = y;
         plane2.position.z = z;
         effectBlend.uniforms.diffuseAmp.value = glowSensitivity * hpAmp * 0.1
-        effectHBlur.uniforms[ 'h' ].value = blur * vWobble / ( width / 2 );
-        effectVBlur.uniforms[ 'v' ].value = blur * vWobble / ( height / 2 );
+        effectHBlur.uniforms[ 'h' ].value = blurDistance * vWobble / ( width / 2 );
+        effectVBlur.uniforms[ 'v' ].value = blurDistance * vWobble / ( height / 2 );
 
 
-        effectHBlur.uniforms[ 'h' ].value = blur * vWobble / ( width / 2 );
-        effectVBlur.uniforms[ 'v' ].value = blur * vWobble / ( height / 2 );
+        effectHBlur.uniforms[ 'h' ].value = blurDistance * vWobble / ( width / 2 );
+        effectVBlur.uniforms[ 'v' ].value = blurDistance * vWobble / ( height / 2 );
 
 
         if (lpAmp > 40 && timeNow - beat > 400) {
@@ -431,12 +352,10 @@
       }
 
       function animateProperties(timeNow){
-        //glowSensitivity = hpAmp;
         sineTime = Math.sin(timeNow * 0.001);
         blackMaterial.opacity = 0.8 - sineTime;
         phongMaterial.opacity = sineTime - 0.2;
         wireMaterial.opacity = (hpAmp * hpDecay / 100.0) - 0.4;
-
       }
 
 
@@ -468,6 +387,61 @@
         
       }
     </script>
+
+
+
+    <script type="text/javascript">
+    soundManager.setup({
+      // path to directory containing SM2 SWF
+      url: 'lib/sm2/swf',
+      preferFlash : true,
+      usePeakData : true,
+      flashVersion : 9
+    });
+    soundManager.flash9Options = {
+      usePeakData : true,
+      useEQData : false,
+    }
+      
+    function initAudio(){
+      smSound = soundManager.createSound({
+        id : 'song1',
+        url : 'music/drumloop.mp3',
+        autoLoad : true,
+        autoPlay : false,
+        usePeakData : true,
+        useEQData : false,
+        volume : 30,
+        loops : 2
+      })
+      soundOn = true;      
+    };
+
+    soundManager.onready(initAudio);
+
+
+    function processAudio(){
+      if (!soundOn || !smSound) return;
+        hi = smSound.peakData.left * 100;
+        lo = smSound.peakData.right * 100;
+
+        if (lpAmp >= lo) {
+          lpAmp = Math.max(lpNoiseFloor, lpAmp * lpDecay);
+        } else {
+          lpAmp = (lpAmp * kickAvg + (lo || 0)) / (kickAvg + 1.0);
+        }
+        
+        if (hpAmp >= smSound.peakData['left'] * 100.0) {
+          hpAmp = Math.max(hpNoiseFloor, hpAmp * hpDecay);
+        } else {
+          hpAmp = (hpAmp * attackAvg + hi) / (attackAvg + 1.0);          
+        }
+    }
+
+    //soundManager.whileplaying = processAudio;
+    </script>
+
+
 
     <script type="text/javascript">
       // INPUTS
