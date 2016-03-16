@@ -2,21 +2,29 @@
   <head>
     <title>8tracks Turns Five</title>
     <style>
-      body { 
+      body, html { 
         margin: 0; 
         background: #000; 
         color: #fff; 
         font-size: 14px; 
+        width: 100%;
+        height: 100%;
       }
 
       a{ color: #fff; }
 
       canvas#viewport { 
-        margin: 50px auto;
-        width: 500px; 
-        height: 500px; 
-        /*width: 100%; 
-        height: 100%; */
+        margin: 0 auto;
+        min-width: 500px; 
+        min-height: 500px; 
+        width: 100%; 
+        height: 100%;
+        max-width: 1080;
+        max-height: 720px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
       }
 
       #sm2-container{
@@ -24,8 +32,9 @@
         height: 1px;
         background: transparent;
         position: absolute;
-        bottom: 0;
-        right: 0;
+        top: 0;
+        left: 0;
+        overflow: hidden;
       }
 
     </style>
@@ -33,7 +42,7 @@
 
   <body>
 
-    <canvas id="viewport" width="500" height="500"></canvas>
+    <canvas id="viewport" width="1080" height="720"></canvas>
 
     <div id="sm2-container" style="background-color: #000; width: 1px; height: 1px;"></div>
 
@@ -62,18 +71,19 @@
     <script src="lib/sm2/script/soundmanager2-nodebug-jsmin.js" type="text/javascript"></script>
 
     <!--script src="script/touchcontrol.js" type="text/javascript"></script-->
+    <script src="visualizer.js"></script>
 
 
 
 
     <script>
       // CONFIGURABLE VARS
-      var lpSensitivity = 10.0
-      var glowSensitivity = 1.0
-      var hpSensitivity = 10.0
-      var lpAmp = 0.1;
-      var hpAmp = 0.1;
-      var lpNoiseFloor = 25;
+      var lpSensitivity = 5.0;
+      var glowSensitivity = 1.0;
+      var hpSensitivity = 10;
+      var lpAmp = 0.5;
+      var hpAmp = 0.5;
+      var lpNoiseFloor = 3;
       var hpNoiseFloor = 3;
       var attackAvg = 2.0;
       var kickAvg = 3.0;
@@ -143,8 +153,15 @@
 
     <script>
       visualizer = new Visualizer({
-        canvas : document.getElementById('viewport');
+        canvas : document.getElementById('viewport')
       })
+
+      width = visualizer.width;
+      height = visualizer.height;
+      canvas = visualizer.canvas;
+      renderer = visualizer.renderer;
+      scene = visualizer.scene;
+      camera = visualizer.camera;
 
       var glowCamera = new THREE.PerspectiveCamera( 75, width / height, 0.1, 1000 );
       glowCamera.position.set( 0, 00, 200 );
@@ -308,7 +325,7 @@
         effectVBlur.uniforms[ 'v' ].value = blurDistance * vWobble / ( height / 2 );
 
 
-        if (lpAmp > 40 && timeNow - beat > 400) {
+        if (lpAmp > lpSensitivity && timeNow - beat > 400) {
           beat = timeNow;
           h = Math.random();
           plane2.material.color.setHSL(h,0.9,0.9);

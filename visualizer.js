@@ -5,13 +5,13 @@ var Visualizer = function(options) {
     this.height   = this.canvas.height;
 
 
-	this.renderer = new THREE.WebGLRenderer({ canvas : canvas });
+	this.renderer = new THREE.WebGLRenderer({ canvas : this.canvas });
 	this.renderer.setClearColor( 0x000000, 1 );
-	this.renderer.setSize( height, width );
+	this.renderer.setSize( this.height, this.width );
 	this.renderer.autoClear = true;
 	  
 	this.scene = new THREE.Scene();
-	this.camera = new THREE.PerspectiveCamera( 75, width / height, 0.1, 1000 );
+	this.camera = new THREE.PerspectiveCamera( 75, this.width / this.height, 0.1, 1000 );
 	this.camera.position.set( 0, 00, 200 );
 
 
